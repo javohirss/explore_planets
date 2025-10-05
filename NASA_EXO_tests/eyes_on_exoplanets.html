@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eyes on Exoplanets - NASA</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* NASA Header */
+        .nasa-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nasa-logo {
+            font-size: 26px;
+            font-weight: 700;
+            color: #FC3D21;
+            margin-right: 40px;
+            letter-spacing: 5px;
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: #fff;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            position: fixed;
+            right: 20px;
+            top: 80px;
+            width: 380px;
+            max-height: calc(100% - 180px);
+            background: rgba(8, 12, 20, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(11,132,239,0.3);
+            border-radius: 10px;
+            padding: 25px;
+            z-index: 900;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            display: none;
+        }
+
+        .info-panel.active {
+            display: block;
+        }
+
+        .info-panel h2 {
+            font-size: 26px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #0B84EF;
+        }
+
+        .info-panel .host-star {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+        }
+
+        .info-section h3 {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .info-value {
+            font-size: 13px;
+            font-weight: 500;
+            text-align: right;
+            color: #fff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(11,132,239,0.2);
+            border: 1px solid rgba(11,132,239,0.4);
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .badge.habitable {
+            background: rgba(76,217,100,0.2);
+            border-color: rgba(76,217,100,0.4);
+            color: #4CD964;
+        }
+
+        .travel-section {
+            margin-top: 20px;
+        }
+
+        .travel-time {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .travel-icon {
+            font-size: 20px;
+            width: 35px;
+        }
+
+        .travel-method {
+            flex: 1;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .travel-duration {
+            font-size: 12px;
+            color: #0B84EF;
+            font-weight: 500;
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            background: rgba(8, 12, 20, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(11,132,239,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 900;
+            min-width: 200px;
+        }
+
+        .stat-item {
+            margin-bottom: 20px;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0B84EF;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        /* Controls */
+        .bottom-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(8, 12, 20, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(11,132,239,0.3);
+            border-radius: 35px;
+            padding: 15px 30px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            z-index: 900;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: rgba(11,132,239,0.3);
+            border-color: #0B84EF;
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: #0B84EF;
+            border-color: #0B84EF;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .toggle-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-checkbox.checked {
+            background: #0B84EF;
+            border-color: #0B84EF;
+        }
+
+        .toggle-checkbox.checked::after {
+            content: '✓';
+            font-size: 13px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .toggle-label {
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .speed-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .speed-slider {
+            width: 100px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.15);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #0B84EF;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(11,132,239,0.5);
+        }
+
+        /* Search Panel */
+        .search-panel {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            background: rgba(8, 12, 20, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(11,132,239,0.3);
+            border-radius: 25px;
+            padding: 12px 20px;
+            z-index: 850;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-icon {
+            color: #888;
+            font-size: 18px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+        .search-results {
+            position: fixed;
+            top: 145px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            max-height: 400px;
+            background: rgba(8, 12, 20, 0.98);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(11,132,239,0.3);
+            border-radius: 10px;
+            overflow-y: auto;
+            z-index: 840;
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background: rgba(11,132,239,0.15);
+        }
+
+        .search-result-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .search-result-info {
+            font-size: 11px;
+            color: #888;
+        }
+
+        /* Loading */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 70px;
+            height: 70px;
+            border: 5px solid rgba(11,132,239,0.2);
+            border-top-color: #0B84EF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 30px;
+            font-size: 18px;
+            color: #888;
+            letter-spacing: 3px;
+        }
+
+        .loading-subtext {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #0B84EF;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: rgba(8, 12, 20, 0.98);
+            border: 1px solid rgba(11,132,239,0.5);
+            padding: 15px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+            max-width: 300px;
+        }
+
+        .tooltip.visible {
+            display: block;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            color: #0B84EF;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .tooltip-info {
+            color: #aaa;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* Instructions */
+        .instructions {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(8, 12, 20, 0.9);
+            padding: 12px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(11,132,239,0.3);
+            font-size: 12px;
+            color: #888;
+            z-index: 800;
+        }
+
+        .instructions.hidden {
+            display: none;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(11,132,239,0.6);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(11,132,239,0.8);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader"></div>
+        <div class="loading-text">EYES ON EXOPLANETS</div>
+        <div class="loading-subtext">Loading NASA Exoplanet Archive Data...</div>
+    </div>
+
+    <!-- NASA Header -->
+    <div class="nasa-header">
+        <div class="nasa-logo">NASA</div>
+        <div class="app-title">EYES ON EXOPLANETS</div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Stats Panel -->
+    <div class="stats-panel">
+        <div class="stat-item">
+            <div class="stat-number" id="planetCount">5,502</div>
+            <div class="stat-label">Confirmed Exoplanets</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="systemCount">4,041</div>
+            <div class="stat-label">Planetary Systems</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="habitableCount">60</div>
+            <div class="stat-label">Habitable Zone</div>
+        </div>
+    </div>
+
+    <!-- Search Panel -->
+    <div class="search-panel">
+        <div class="search-icon">🔍</div>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search exoplanets by name...">
+    </div>
+
+    <!-- Search Results -->
+    <div class="search-results" id="searchResults"></div>
+
+    <!-- Info Panel -->
+    <div class="info-panel" id="infoPanel">
+        <h2 id="planetName">Select an Exoplanet</h2>
+        <div class="host-star" id="hostStar"></div>
+        
+        <div class="info-section">
+            <h3>Planet Characteristics</h3>
+            <div id="planetInfo"></div>
+        </div>
+
+        <div class="info-section">
+            <h3>Host Star</h3>
+            <div id="starInfo"></div>
+        </div>
+
+        <div class="info-section travel-section">
+            <h3>Time to Travel There</h3>
+            <div class="travel-time">
+                <div class="travel-icon">🚗</div>
+                <div class="travel-method">Car (100 km/h)</div>
+                <div class="travel-duration" id="carTime">--</div>
+            </div>
+            <div class="travel-time">
+                <div class="travel-icon">✈️</div>
+                <div class="travel-method">Jet (900 km/h)</div>
+                <div class="travel-duration" id="jetTime">--</div>
+            </div>
+            <div class="travel-time">
+                <div class="travel-icon">🚅</div>
+                <div class="travel-method">Bullet Train (300 km/h)</div>
+                <div class="travel-duration" id="trainTime">--</div>
+            </div>
+            <div class="travel-time">
+                <div class="travel-icon">🚀</div>
+                <div class="travel-method">Light Speed</div>
+                <div class="travel-duration" id="lightTime">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions" id="instructions">
+        💡 Click and drag to rotate • Scroll to zoom • Click on planets to learn more
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="bottom-controls">
+        <button class="control-btn" onclick="resetView()">
+            🏠 Reset View
+        </button>
+        
+        <div class="toggle-item" onclick="toggleFeature('orbits')">
+            <div class="toggle-checkbox checked" id="toggleOrbits"></div>
+            <div class="toggle-label">Orbits</div>
+        </div>
+        
+        <div class="toggle-item" onclick="toggleFeature('habzone')">
+            <div class="toggle-checkbox checked" id="toggleHabZone"></div>
+            <div class="toggle-label">Habitable Zones</div>
+        </div>
+        
+        <div class="toggle-item" onclick="toggleFeature('labels')">
+            <div class="toggle-checkbox" id="toggleLabels"></div>
+            <div class="toggle-label">Labels</div>
+        </div>
+
+        <div class="speed-control">
+            <span class="speed-label">Speed</span>
+            <input type="range" class="speed-slider" id="speedSlider" min="0" max="100" value="30">
+        </div>
+
+        <button class="control-btn" id="btnPause" onclick="togglePause()">
+            ⏸️ Pause
+        </button>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer;
+        let exoplanets = [];
+        let starSystems = [];
+        let selectedPlanet = null;
+        let animationSpeed = 0.6;
+        let isPaused = false;
+        let showOrbits = true;
+        let showHabZone = true;
+        let showLabels = false;
+        let raycaster, mouse;
+        let milkyWayDisk;
+
+        // NASA Exoplanet Archive Data (Real astronomical coordinates)
+        // Data includes: RA (Right Ascension in degrees), Dec (Declination in degrees), Distance (light years)
+        const exoplanetData = [
+            // TRAPPIST-1 System (RA: 346.62, Dec: -5.04, Distance: 39.5 ly)
+            { name: "TRAPPIST-1 e", host: "TRAPPIST-1", ra: 346.62, dec: -5.04, distance: 39.5, type: "Terrestrial", radius: 0.92, mass: 0.62, period: 6.1, temp: 246, orbitalRadius: 0.029, habitable: true, discovery: 2017 },
+            { name: "TRAPPIST-1 f", host: "TRAPPIST-1", ra: 346.62, dec: -5.04, distance: 39.5, type: "Terrestrial", radius: 1.04, mass: 0.68, period: 9.2, temp: 219, orbitalRadius: 0.037, habitable: true, discovery: 2017 },
+            { name: "TRAPPIST-1 g", host: "TRAPPIST-1", ra: 346.62, dec: -5.04, distance: 39.5, type: "Terrestrial", radius: 1.13, mass: 0.85, period: 12.4, temp: 198, orbitalRadius: 0.045, habitable: true, discovery: 2017 },
+            { name: "TRAPPIST-1 d", host: "TRAPPIST-1", ra: 346.62, dec: -5.04, distance: 39.5, type: "Terrestrial", radius: 0.77, mass: 0.41, period: 4.0, temp: 288, orbitalRadius: 0.021, habitable: false, discovery: 2017 },
+            { name: "TRAPPIST-1 b", host: "TRAPPIST-1", ra: 346.62, dec: -5.04, distance: 39.5, type: "Terrestrial", radius: 1.09, mass: 0.85, period: 1.5, temp: 400, orbitalRadius: 0.011, habitable: false, discovery: 2016 },
+            { name: "TRAPPIST-1 c", host: "TRAPPIST-1", ra: 346.62, dec: -5.04, distance: 39.5, type: "Terrestrial", radius: 1.06, mass: 0.75, period: 2.4, temp: 342, orbitalRadius: 0.015, habitable: false, discovery: 2016 },
+            { name: "TRAPPIST-1 h", host: "TRAPPIST-1", ra: 346.62, dec: -5.04, distance: 39.5, type: "Terrestrial", radius: 0.76, mass: 0.33, period: 20.0, temp: 173, orbitalRadius: 0.063, habitable: false, discovery: 2017 },
+            
+            // Proxima Centauri (RA: 217.43, Dec: -62.68, Distance: 4.24 ly - Closest!)
+            { name: "Proxima Centauri b", host: "Proxima Centauri", ra: 217.43, dec: -62.68, distance: 4.24, type: "Terrestrial", radius: 1.3, mass: 1.27, period: 11.2, temp: 234, orbitalRadius: 0.049, habitable: true, discovery: 2016 },
+            { name: "Proxima Centauri d", host: "Proxima Centauri", ra: 217.43, dec: -62.68, distance: 4.24, type: "Terrestrial", radius: 0.81, mass: 0.26, period: 5.1, temp: 287, orbitalRadius: 0.029, habitable: false, discovery: 2022 },
+            
+            // Kepler-186 (RA: 293.89, Dec: 43.94, Distance: 492 ly)
+            { name: "Kepler-186 f", host: "Kepler-186", ra: 293.89, dec: 43.94, distance: 492, type: "Terrestrial", radius: 1.17, mass: 1.44, period: 130, temp: 188, orbitalRadius: 0.432, habitable: true, discovery: 2014 },
+            { name: "Kepler-186 e", host: "Kepler-186", ra: 293.89, dec: 43.94, distance: 492, type: "Terrestrial", radius: 1.27, mass: 1.62, period: 22.4, temp: 374, orbitalRadius: 0.110, habitable: false, discovery: 2014 },
+            { name: "Kepler-186 d", host: "Kepler-186", ra: 293.89, dec: 43.94, distance: 492, type: "Terrestrial", radius: 1.40, mass: 1.96, period: 13.3, temp: 433, orbitalRadius: 0.078, habitable: false, discovery: 2014 },
+            { name: "Kepler-186 c", host: "Kepler-186", ra: 293.89, dec: 43.94, distance: 492, type: "Terrestrial", radius: 1.07, mass: 1.15, period: 7.3, temp: 541, orbitalRadius: 0.045, habitable: false, discovery: 2014 },
+            { name: "Kepler-186 b", host: "Kepler-186", ra: 293.89, dec: 43.94, distance: 492, type: "Terrestrial", radius: 1.07, mass: 1.24, period: 4.0, temp: 631, orbitalRadius: 0.034, habitable: false, discovery: 2014 },
+            
+            // Kepler-452 (RA: 297.43, Dec: 44.28, Distance: 1402 ly - Earth's Cousin)
+            { name: "Kepler-452 b", host: "Kepler-452", ra: 297.43, dec: 44.28, distance: 1402, type: "Super-Earth", radius: 1.63, mass: 5.0, period: 384.8, temp: 265, orbitalRadius: 1.046, habitable: true, discovery: 2015 },
+            
+            // TOI-700 (RA: 92.25, Dec: -65.45, Distance: 101.4 ly)
+            { name: "TOI-700 d", host: "TOI-700", ra: 92.25, dec: -65.45, distance: 101.4, type: "Terrestrial", radius: 1.19, mass: 1.72, period: 37.4, temp: 269, orbitalRadius: 0.163, habitable: true, discovery: 2020 },
+            { name: "TOI-700 e", host: "TOI-700", ra: 92.25, dec: -65.45, distance: 101.4, type: "Terrestrial", radius: 0.95, mass: 0.82, period: 28.0, temp: 293, orbitalRadius: 0.134, habitable: true, discovery: 2023 },
+            { name: "TOI-700 c", host: "TOI-700", ra: 92.25, dec: -65.45, distance: 101.4, type: "Neptune-like", radius: 2.63, mass: 6.3, period: 16.1, temp: 343, orbitalRadius: 0.093, habitable: false, discovery: 2020 },
+            { name: "TOI-700 b", host: "TOI-700", ra: 92.25, dec: -65.45, distance: 101.4, type: "Terrestrial", radius: 1.04, mass: 1.2, period: 9.98, temp: 426, orbitalRadius: 0.062, habitable: false, discovery: 2020 },
+            
+            // K2-18 (RA: 165.48, Dec: 7.59, Distance: 124 ly)
+            { name: "K2-18 b", host: "K2-18", ra: 165.48, dec: 7.59, distance: 124, type: "Super-Earth", radius: 2.61, mass: 8.63, period: 33.0, temp: 279, orbitalRadius: 0.143, habitable: true, discovery: 2015 },
+            { name: "K2-18 c", host: "K2-18", ra: 165.48, dec: 7.59, distance: 124, type: "Super-Earth", radius: 1.95, mass: 7.5, period: 9.0, temp: 451, orbitalRadius: 0.068, habitable: false, discovery: 2017 },
+            
+            // LHS 1140 (RA: 21.26, Dec: -15.27, Distance: 40.7 ly)
+            { name: "LHS 1140 b", host: "LHS 1140", ra: 21.26, dec: -15.27, distance: 40.7, type: "Super-Earth", radius: 1.73, mass: 6.65, period: 24.7, temp: 230, orbitalRadius: 0.088, habitable: true, discovery: 2017 },
+            { name: "LHS 1140 c", host: "LHS 1140", ra: 21.26, dec: -15.27, distance: 40.7, type: "Super-Earth", radius: 1.28, mass: 1.81, period: 3.78, temp: 506, orbitalRadius: 0.029, habitable: false, discovery: 2018 },
+            
+            // Kepler-22 (RA: 290.68, Dec: 47.88, Distance: 620 ly)
+            { name: "Kepler-22 b", host: "Kepler-22", ra: 290.68, dec: 47.88, distance: 620, type: "Super-Earth", radius: 2.38, mass: 9.1, period: 289.9, temp: 262, orbitalRadius: 0.849, habitable: true, discovery: 2011 },
+            
+            // Kepler-62 (RA: 272.53, Dec: 45.35, Distance: 1200 ly)
+            { name: "Kepler-62 f", host: "Kepler-62", ra: 272.53, dec: 45.35, distance: 1200, type: "Super-Earth", radius: 1.41, mass: 2.8, period: 267.3, temp: 208, orbitalRadius: 0.718, habitable: true, discovery: 2013 },
+            { name: "Kepler-62 e", host: "Kepler-62", ra: 272.53, dec: 45.35, distance: 1200, type: "Super-Earth", radius: 1.61, mass: 4.5, period: 122.4, temp: 270, orbitalRadius: 0.427, habitable: true, discovery: 2013 },
+            { name: "Kepler-62 d", host: "Kepler-62", ra: 272.53, dec: 45.35, distance: 1200, type: "Neptune-like", radius: 1.95, mass: 5.5, period: 18.2, temp: 510, orbitalRadius: 0.120, habitable: false, discovery: 2013 },
+            { name: "Kepler-62 c", host: "Kepler-62", ra: 272.53, dec: 45.35, distance: 1200, type: "Terrestrial", radius: 0.54, mass: 0.1, period: 12.4, temp: 578, orbitalRadius: 0.093, habitable: false, discovery: 2013 },
+            { name: "Kepler-62 b", host: "Kepler-62", ra: 272.53, dec: 45.35, distance: 1200, type: "Terrestrial", radius: 1.31, mass: 2.1, period: 5.7, temp: 740, orbitalRadius: 0.055, habitable: false, discovery: 2013 },
+            
+            // GJ 1061 (RA: 45.86, Dec: -44.55, Distance: 12.0 ly)
+            { name: "GJ 1061 d", host: "GJ 1061", ra: 45.86, dec: -44.55, distance: 12.0, type: "Super-Earth", radius: 1.38, mass: 1.68, period: 13.0, temp: 273, orbitalRadius: 0.054, habitable: true, discovery: 2020 },
+            { name: "GJ 1061 c", host: "GJ 1061", ra: 45.86, dec: -44.55, distance: 12.0, type: "Terrestrial", radius: 1.31, mass: 1.74, period: 6.7, temp: 348, orbitalRadius: 0.035, habitable: false, discovery: 2020 },
+            { name: "GJ 1061 b", host: "GJ 1061", ra: 45.86, dec: -44.55, distance: 12.0, type: "Terrestrial", radius: 1.15, mass: 1.44, period: 3.2, temp: 448, orbitalRadius: 0.021, habitable: false, discovery: 2020 },
+            
+            // Wolf 1061 (RA: 244.72, Dec: -12.62, Distance: 13.8 ly)
+            { name: "Wolf 1061 c", host: "Wolf 1061", ra: 244.72, dec: -12.62, distance: 13.8, type: "Super-Earth", radius: 1.66, mass: 4.3, period: 17.9, temp: 273, orbitalRadius: 0.089, habitable: true, discovery: 2015 },
+            { name: "Wolf 1061 b", host: "Wolf 1061", ra: 244.72, dec: -12.62, distance: 13.8, type: "Terrestrial", radius: 1.36, mass: 1.9, period: 4.9, temp: 436, orbitalRadius: 0.038, habitable: false, discovery: 2015 },
+            { name: "Wolf 1061 d", host: "Wolf 1061", ra: 244.72, dec: -12.62, distance: 13.8, type: "Neptune-like", radius: 2.04, mass: 7.7, period: 67.3, temp: 148, orbitalRadius: 0.470, habitable: false, discovery: 2015 },
+            
+            // Gliese 667 C (RA: 259.84, Dec: -34.60, Distance: 23.6 ly)
+            { name: "Gliese 667 Cc", host: "Gliese 667 C", ra: 259.84, dec: -34.60, distance: 23.6, type: "Super-Earth", radius: 1.54, mass: 3.8, period: 28.1, temp: 277, orbitalRadius: 0.125, habitable: true, discovery: 2011 },
+            { name: "Gliese 667 Cf", host: "Gliese 667 C", ra: 259.84, dec: -34.60, distance: 23.6, type: "Super-Earth", radius: 1.38, mass: 2.7, period: 39.0, temp: 241, orbitalRadius: 0.156, habitable: true, discovery: 2013 },
+            { name: "Gliese 667 Ce", host: "Gliese 667 C", ra: 259.84, dec: -34.60, distance: 23.6, type: "Super-Earth", radius: 1.44, mass: 2.7, period: 62.3, temp: 197, orbitalRadius: 0.213, habitable: false, discovery: 2013 },
+            
+            // HD 40307 (RA: 87.22, Dec: -60.02, Distance: 42 ly)
+            { name: "HD 40307 g", host: "HD 40307", ra: 87.22, dec: -60.02, distance: 42, type: "Super-Earth", radius: 2.4, mass: 7.1, period: 197.8, temp: 227, orbitalRadius: 0.600, habitable: true, discovery: 2012 },
+            { name: "HD 40307 f", host: "HD 40307", ra: 87.22, dec: -60.02, distance: 42, type: "Super-Earth", radius: 1.9, mass: 5.2, period: 51.8, temp: 343, orbitalRadius: 0.247, habitable: false, discovery: 2012 },
+            { name: "HD 40307 e", host: "HD 40307", ra: 87.22, dec: -60.02, distance: 42, type: "Super-Earth", radius: 1.8, mass: 3.5, period: 34.6, temp: 390, orbitalRadius: 0.189, habitable: false, discovery: 2012 },
+            { name: "HD 40307 d", host: "HD 40307", ra: 87.22, dec: -60.02, distance: 42, type: "Super-Earth", radius: 1.9, mass: 5.8, period: 20.5, temp: 485, orbitalRadius: 0.134, habitable: false, discovery: 2008 },
+            { name: "HD 40307 c", host: "HD 40307", ra: 87.22, dec: -60.02, distance: 42, type: "Super-Earth", radius: 1.7, mass: 6.6, period: 9.6, temp: 702, orbitalRadius: 0.081, habitable: false, discovery: 2008 },
+            { name: "HD 40307 b", host: "HD 40307", ra: 87.22, dec: -60.02, distance: 42, type: "Super-Earth", radius: 1.4, mass: 4.2, period: 4.3, temp: 950, orbitalRadius: 0.047, habitable: false, discovery: 2008 },
+            
+            // 51 Pegasi (RA: 344.37, Dec: 20.77, Distance: 50.45 ly - First Exoplanet!)
+            { name: "51 Pegasi b", host: "51 Pegasi", ra: 344.37, dec: 20.77, distance: 50.45, type: "Gas Giant", radius: 1.9, mass: 150, period: 4.23, temp: 1284, orbitalRadius: 0.053, habitable: false, discovery: 1995 },
+            
+            // HD 209458 (RA: 330.80, Dec: 18.88, Distance: 159 ly)
+            { name: "HD 209458 b", host: "HD 209458", ra: 330.80, dec: 18.88, distance: 159, type: "Gas Giant", radius: 1.38, mass: 220, period: 3.52, temp: 1449, orbitalRadius: 0.047, habitable: false, discovery: 1999 },
+            
+            // GJ 436 (RA: 175.55, Dec: 26.71, Distance: 31.8 ly)
+            { name: "GJ 436 b", host: "GJ 436", ra: 175.55, dec: 26.71, distance: 31.8, type: "Neptune-like", radius: 4.19, mass: 22.1, period: 2.64, temp: 642, orbitalRadius: 0.029, habitable: false, discovery: 2004 },
+            
+            // 55 Cancri (RA: 128.63, Dec: 28.33, Distance: 41 ly)
+            { name: "55 Cancri e", host: "55 Cancri", ra: 128.63, dec: 28.33, distance: 41, type: "Super-Earth", radius: 1.99, mass: 8.63, period: 0.74, temp: 2709, orbitalRadius: 0.016, habitable: false, discovery: 2004 },
+            { name: "55 Cancri b", host: "55 Cancri", ra: 128.63, dec: 28.33, distance: 41, type: "Gas Giant", radius: 2.3, mass: 259.4, period: 14.7, temp: 943, orbitalRadius: 0.115, habitable: false, discovery: 1996 },
+            { name: "55 Cancri c", host: "55 Cancri", ra: 128.63, dec: 28.33, distance: 41, type: "Super-Earth", radius: 1.8, mass: 17.0, period: 44.4, temp: 579, orbitalRadius: 0.240, habitable: false, discovery: 2002 },
+            { name: "55 Cancri f", host: "55 Cancri", ra: 128.63, dec: 28.33, distance: 41, type: "Super-Earth", radius: 2.8, mass: 45.8, period: 260, temp: 342, orbitalRadius: 0.781, habitable: false, discovery: 2007 },
+            { name: "55 Cancri d", host: "55 Cancri", ra: 128.63, dec: 28.33, distance: 41, type: "Gas Giant", radius: 3.9, mass: 113.4, period: 5218, temp: 75, orbitalRadius: 5.76, habitable: false, discovery: 2002 },
+        ];
+
+        // Convert RA, Dec, Distance to Cartesian coordinates
+        function celestialToCartesian(ra, dec, distance) {
+            // Convert degrees to radians
+            const raRad = (ra * Math.PI) / 180;
+            const decRad = (dec * Math.PI) / 180;
+            
+            // Scale distance for visualization (1 ly = 1 unit, but scale down for display)
+            const scale = 0.1;
+            const d = distance * scale;
+            
+            // Convert to Cartesian coordinates
+            const x = d * Math.cos(decRad) * Math.cos(raRad);
+            const y = d * Math.sin(decRad);
+            const z = d * Math.cos(decRad) * Math.sin(raRad);
+            
+            return { x, y, z };
+        }
+
+        // Initialize scene
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.002);
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(
+                50,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(30, 20, 40);
+            camera.lookAt(0, 0, 0);
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Raycaster
+            raycaster = new THREE.Raycaster();
+            raycaster.params.Points.threshold = 0.5;
+            mouse = new THREE.Vector2();
+
+            // Create Milky Way representation
+            createMilkyWay();
+            
+            // Create star field
+            createStarField();
+            
+            // Create exoplanet systems with accurate positions
+            createExoplanetSystems();
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+            scene.add(ambientLight);
+            
+            // Sun indicator (our solar system)
+            createSun();
+            
+            // Event listeners
+            setupEventListeners();
+            
+            // Update counts
+            updateStats();
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+                setTimeout(() => {
+                    document.getElementById('instructions').classList.add('hidden');
+                }, 5000);
+            }, 2000);
+            
+            // Start animation
+            animate();
+        }
+
+        function createMilkyWay() {
+            // Create a disk representing the Milky Way galaxy
+            const diskGeometry = new THREE.CircleGeometry(150, 128);
+            const diskMaterial = new THREE.MeshBasicMaterial({
+                color: 0x1a2a4a,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.DoubleSide
+            });
+            milkyWayDisk = new THREE.Mesh(diskGeometry, diskMaterial);
+            milkyWayDisk.rotation.x = Math.PI / 2;
+            scene.add(milkyWayDisk);
+            
+            // Add galactic grid
+            const gridHelper = new THREE.PolarGridHelper(150, 16, 8, 64, 0x2244aa, 0x112244);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
+        }
+
+        function createStarField() {
+            const starsGeometry = new THREE.BufferGeometry();
+            const starCount = 20000;
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 500;
+                positions[i + 1] = (Math.random() - 0.5) * 500;
+                positions[i + 2] = (Math.random() - 0.5) * 500;
+
+                const color = new THREE.Color();
+                const temp = Math.random();
+                if (temp < 0.3) color.setHex(0xffddbb); // Yellow-white
+                else if (temp < 0.6) color.setHex(0xffffff); // White
+                else color.setHex(0xbbddff); // Blue-white
+                
+                colors[i] = color.r;
+                colors[i + 1] = color.g;
+                colors[i + 2] = color.b;
+            }
+
+            starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const starsMaterial = new THREE.PointsMaterial({
+                size: 0.6,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const starField = new THREE.Points(starsGeometry, starsMaterial);
+            scene.add(starField);
+        }
+
+        function createSun() {
+            // Our Sun at origin
+            const sunGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const sunMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffff00,
+                emissive: 0xffff00,
+                emissiveIntensity: 1
+            });
+            const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            sun.userData = { type: 'sun', name: 'Our Sun' };
+            scene.add(sun);
+            
+            // Sun glow
+            const glowGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffff00,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            scene.add(glow);
+            
+            // Sun label
+            const sunLight = new THREE.PointLight(0xffff00, 1, 20);
+            scene.add(sunLight);
+        }
+
+        function createExoplanetSystems() {
+            const systemsCreated = new Map();
+            
+            exoplanetData.forEach((planetData, index) => {
+                const systemKey = planetData.host;
+                
+                // Get or create star system
+                if (!systemsCreated.has(systemKey)) {
+                    // Convert celestial coordinates to 3D position
+                    const position = celestialToCartesian(planetData.ra, planetData.dec, planetData.distance);
+                    
+                    // Create star system group
+                    const systemGroup = new THREE.Group();
+                    systemGroup.position.set(position.x, position.y, position.z);
+                    systemGroup.userData = {
+                        systemName: systemKey,
+                        ra: planetData.ra,
+                        dec: planetData.dec,
+                        distance: planetData.distance
+                    };
+                    
+                    // Create host star
+                    const starSize = 0.3;
+                    const starColor = getStarColor(planetData.host);
+                    
+                    const starGeometry = new THREE.SphereGeometry(starSize, 16, 16);
+                    const starMaterial = new THREE.MeshBasicMaterial({
+                        color: starColor,
+                        emissive: starColor,
+                        emissiveIntensity: 1
+                    });
+                    const star = new THREE.Mesh(starGeometry, starMaterial);
+                    star.userData = { type: 'star', systemName: systemKey };
+                    systemGroup.add(star);
+                    
+                    // Star glow
+                    const glowGeometry = new THREE.SphereGeometry(starSize * 1.5, 16, 16);
+                    const glowMaterial = new THREE.MeshBasicMaterial({
+                        color: starColor,
+                        transparent: true,
+                        opacity: 0.3
+                    });
+                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                    systemGroup.add(glow);
+                    
+                    // Point light for star
+                    const light = new THREE.PointLight(starColor, 1.5, 15);
+                    systemGroup.add(light);
+                    
+                    scene.add(systemGroup);
+                    systemsCreated.set(systemKey, systemGroup);
+                    starSystems.push(systemGroup);
+                }
+                
+                // Create planet in this system
+                const systemGroup = systemsCreated.get(systemKey);
+                createPlanet(systemGroup, planetData);
+            });
+        }
+
+        function getStarColor(starName) {
+            // Simplified star classification
+            if (starName.includes('TRAPPIST') || starName.includes('Proxima') || 
+                starName.includes('GJ') || starName.includes('LHS') || 
+                starName.includes('Wolf')) {
+                return 0xff6633; // Red dwarf
+            } else if (starName.includes('Kepler') || starName.includes('TOI')) {
+                return 0xffaa44; // K-type
+            } else {
+                return 0xffffcc; // G-type (Sun-like)
+            }
+        }
+
+        function createPlanet(systemGroup, planetData) {
+            const planetGroup = new THREE.Group();
+            
+            // Planet size and color
+            let planetSize, planetColor;
+            switch (planetData.type) {
+                case 'Terrestrial':
+                    planetSize = planetData.radius * 0.08;
+                    planetColor = planetData.habitable ? 0x4488ff : 0x886644;
+                    break;
+                case 'Super-Earth':
+                    planetSize = planetData.radius * 0.08;
+                    planetColor = planetData.habitable ? 0x5599ff : 0x998866;
+                    break;
+                case 'Neptune-like':
+                    planetSize = planetData.radius * 0.05;
+                    planetColor = 0x6688ff;
+                    break;
+                case 'Gas Giant':
+                    planetSize = planetData.radius * 0.05;
+                    planetColor = 0xffaa66;
+                    break;
+            }
+            
+            // Scale orbital radius for visualization
+            const orbitRadius = planetData.orbitalRadius * 5;
+            
+            // Create orbit
+            const orbitGeometry = new THREE.RingGeometry(orbitRadius - 0.01, orbitRadius + 0.01, 64);
+            const orbitMaterial = new THREE.MeshBasicMaterial({
+                color: planetData.habitable ? 0x4CD964 : 0x444444,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: planetData.habitable ? 0.4 : 0.2
+            });
+            const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
+            orbit.rotation.x = Math.PI / 2;
+            orbit.userData = { type: 'orbit' };
+            orbit.visible = showOrbits;
+            systemGroup.add(orbit);
+            
+            // Create planet
+            const planetGeometry = new THREE.SphereGeometry(planetSize, 16, 16);
+            const planetMaterial = new THREE.MeshStandardMaterial({
+                color: planetColor,
+                emissive: planetColor,
+                emissiveIntensity: 0.2,
+                roughness: 0.8,
+                metalness: 0.1
+            });
+            const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+            
+            planet.userData = {
+                type: 'planet',
+                planetData: planetData,
+                orbitRadius: orbitRadius,
+                angle: Math.random() * Math.PI * 2,
+                angularVelocity: (2 * Math.PI) / (planetData.period * 20)
+            };
+            
+            // Habitable zone indicator
+            if (planetData.habitable) {
+                const ringGeometry = new THREE.RingGeometry(planetSize * 1.2, planetSize * 1.5, 32);
+                const ringMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x4CD964,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.x = Math.PI / 2;
+                ring.userData = { type: 'habzone' };
+                ring.visible = showHabZone;
+                planet.add(ring);
+            }
+            
+            planetGroup.add(planet);
+            systemGroup.add(planetGroup);
+            exoplanets.push(planet);
+        }
+
+        function selectPlanet(planet) {
+            selectedPlanet = planet;
+            const data = planet.userData.planetData;
+            
+            // Update info panel
+            document.getElementById('planetName').textContent = data.name;
+            document.getElementById('hostStar').textContent = `Orbiting ${data.host}`;
+            
+            const planetInfoHTML = `
+                <div class="info-row">
+                    <div class="info-label">Type</div>
+                    <div class="info-value">${data.type}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Radius</div>
+                    <div class="info-value">${data.radius.toFixed(2)} Earth</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Mass</div>
+                    <div class="info-value">${data.mass.toFixed(2)} Earth</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Orbital Period</div>
+                    <div class="info-value">${data.period.toFixed(1)} days</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Temperature</div>
+                    <div class="info-value">${data.temp} K</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Discovery Year</div>
+                    <div class="info-value">${data.discovery}</div>
+                </div>
+                ${data.habitable ? '<div class="badge habitable">★ In Habitable Zone</div>' : ''}
+            `;
+            document.getElementById('planetInfo').innerHTML = planetInfoHTML;
+            
+            const starInfoHTML = `
+                <div class="info-row">
+                    <div class="info-label">Distance from Earth</div>
+                    <div class="info-value">${data.distance.toFixed(1)} light years</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Right Ascension</div>
+                    <div class="info-value">${data.ra.toFixed(2)}°</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Declination</div>
+                    <div class="info-value">${data.dec.toFixed(2)}°</div>
+                </div>
+            `;
+            document.getElementById('starInfo').innerHTML = starInfoHTML;
+            
+            // Calculate travel times
+            const distanceKm = data.distance * 9.461e12;
+            document.getElementById('carTime').textContent = (distanceKm / 100 / 8760).toExponential(1) + ' years';
+            document.getElementById('jetTime').textContent = (distanceKm / 900 / 8760).toExponential(1) + ' years';
+            document.getElementById('trainTime').textContent = (distanceKm / 300 / 8760).toExponential(1) + ' years';
+            document.getElementById('lightTime').textContent = data.distance.toFixed(1) + ' years';
+            
+            // Show panel
+            document.getElementById('infoPanel').classList.add('active');
+            
+            // Animate camera
+            animateCameraToTarget(planet);
+        }
+
+        function animateCameraToTarget(planet) {
+            const worldPos = new THREE.Vector3();
+            planet.parent.parent.getWorldPosition(worldPos);
+            
+            const startPos = camera.position.clone();
+            const endPos = worldPos.clone();
+            endPos.x += 5;
+            endPos.y += 3;
+            endPos.z += 5;
+            
+            const startTime = Date.now();
+            const duration = 1500;
+            
+            function update() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = easeInOutCubic(progress);
+                
+                camera.position.lerpVectors(startPos, endPos, eased);
+                camera.lookAt(worldPos);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            update();
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function updateStats() {
+            document.getElementById('planetCount').textContent = exoplanetData.length.toLocaleString();
+            const systems = new Set(exoplanetData.map(p => p.host)).size;
+            document.getElementById('systemCount').textContent = systems.toLocaleString();
+            const habitable = exoplanetData.filter(p => p.habitable).length;
+            document.getElementById('habitableCount').textContent = habitable;
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('click', onMouseClick);
+            
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                
+                if (query.length < 2) {
+                    searchResults.classList.remove('active');
+                    return;
+                }
+                
+                const results = exoplanetData.filter(p => 
+                    p.name.toLowerCase().includes(query) || 
+                    p.host.toLowerCase().includes(query)
+                ).slice(0, 10);
+                
+                if (results.length > 0) {
+                    searchResults.innerHTML = results.map(p => `
+                        <div class="search-result-item" onclick="selectPlanetByName('${p.name}')">
+                            <div class="search-result-name">${p.name}</div>
+                            <div class="search-result-info">
+                                ${p.host} • ${p.distance.toFixed(1)} ly • ${p.type}
+                                ${p.habitable ? ' • ★ Habitable' : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                    searchResults.classList.add('active');
+                } else {
+                    searchResults.classList.remove('active');
+                }
+            });
+            
+            // Speed slider
+            document.getElementById('speedSlider').addEventListener('input', (e) => {
+                animationSpeed = parseFloat(e.target.value) / 50;
+            });
+            
+            // Mouse controls
+            let isDragging = false;
+            let previousMouse = { x: 0, y: 0 };
+            
+            renderer.domElement.addEventListener('mousedown', () => isDragging = true);
+            renderer.domElement.addEventListener('mouseup', () => isDragging = false);
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.clientX - previousMouse.x;
+                    const deltaY = e.clientY - previousMouse.y;
+                    
+                    const rotationSpeed = 0.005;
+                    camera.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), -deltaX * rotationSpeed);
+                    
+                    const currentDistance = camera.position.length();
+                    camera.position.y += deltaY * 0.1;
+                    camera.position.normalize().multiplyScalar(currentDistance);
+                    
+                    camera.lookAt(0, 0, 0);
+                }
+                previousMouse = { x: e.clientX, y: e.clientY };
+            });
+            
+            // Zoom
+            renderer.domElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomSpeed = 0.02;
+                const direction = camera.position.clone().normalize();
+                camera.position.addScaledVector(direction, -e.deltaY * zoomSpeed);
+                
+                const minDistance = 5;
+                const maxDistance = 200;
+                const distance = camera.position.length();
+                if (distance < minDistance) {
+                    camera.position.normalize().multiplyScalar(minDistance);
+                } else if (distance > maxDistance) {
+                    camera.position.normalize().multiplyScalar(maxDistance);
+                }
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(exoplanets);
+            
+            const tooltip = document.getElementById('tooltip');
+            
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                const data = obj.userData.planetData;
+                
+                tooltip.style.left = event.clientX + 15 + 'px';
+                tooltip.style.top = event.clientY + 15 + 'px';
+                tooltip.innerHTML = `
+                    <div class="tooltip-title">${data.name}</div>
+                    <div class="tooltip-info">
+                        ${data.type} • ${data.radius.toFixed(2)}× Earth<br>
+                        ${data.distance.toFixed(1)} light years away<br>
+                        Temperature: ${data.temp}K
+                        ${data.habitable ? '<br>★ In Habitable Zone' : ''}
+                    </div>
+                `;
+                tooltip.classList.add('visible');
+                renderer.domElement.style.cursor = 'pointer';
+            } else {
+                tooltip.classList.remove('visible');
+                renderer.domElement.style.cursor = 'default';
+            }
+        }
+
+        function onMouseClick(event) {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(exoplanets);
+            
+            if (intersects.length > 0) {
+                selectPlanet(intersects[0].object);
+            }
+        }
+
+        function selectPlanetByName(name) {
+            const planet = exoplanets.find(p => p.userData.planetData.name === name);
+            if (planet) {
+                selectPlanet(planet);
+                document.getElementById('searchResults').classList.remove('active');
+                document.getElementById('searchInput').value = '';
+            }
+        }
+
+        function toggleFeature(feature) {
+            if (feature === 'orbits') {
+                showOrbits = !showOrbits;
+                document.getElementById('toggleOrbits').classList.toggle('checked');
+                scene.traverse(obj => {
+                    if (obj.userData.type === 'orbit') {
+                        obj.visible = showOrbits;
+                    }
+                });
+            } else if (feature === 'habzone') {
+                showHabZone = !showHabZone;
+                document.getElementById('toggleHabZone').classList.toggle('checked');
+                scene.traverse(obj => {
+                    if (obj.userData.type === 'habzone') {
+                        obj.visible = showHabZone;
+                    }
+                });
+            } else if (feature === 'labels') {
+                showLabels = !showLabels;
+                document.getElementById('toggleLabels').classList.toggle('checked');
+            }
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('btnPause').innerHTML = isPaused ? '▶️ Play' : '⏸️ Pause';
+        }
+
+        function resetView() {
+            camera.position.set(30, 20, 40);
+            camera.lookAt(0, 0, 0);
+            selectedPlanet = null;
+            document.getElementById('infoPanel').classList.remove('active');
+            document.getElementById('searchResults').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (!isPaused) {
+                // Animate planet orbits
+                exoplanets.forEach(planet => {
+                    planet.userData.angle += planet.userData.angularVelocity * animationSpeed;
+                    planet.parent.position.x = Math.cos(planet.userData.angle) * planet.userData.orbitRadius;
+                    planet.parent.position.z = Math.sin(planet.userData.angle) * planet.userData.orbitRadius;
+                    planet.rotation.y += 0.01;
+                });
+                
+                // Slowly rotate Milky Way disk
+                if (milkyWayDisk) {
+                    milkyWayDisk.rotation.z += 0.0001;
+                }
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
