@@ -14,7 +14,7 @@ router = APIRouter(
 
 @router.get("")
 async def get_planets(session: AsyncSession = Depends(get_async_session)):
-    await PlanetService.get_all()
+    return await PlanetService.get_all(session)
 
 
 @router.post("/add")
