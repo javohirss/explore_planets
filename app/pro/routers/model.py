@@ -14,13 +14,20 @@ router = APIRouter(
 
 @router.get("/", response_model=list[ModelResponse])
 async def get_models(session: AsyncSession = Depends(get_async_session)):
-    models = await ModelService.get_all(session)
-    result = []
-    for model in models:
-        # Преобразуем dict обратно в ModelMetrics для response
-        metrics = ModelMetrics(**model.metrics) if model.metrics else None
-        result.append(ModelResponse(id=model.id, name=model.name, path=model.path, metrics=metrics))
-    return result
+    try:
+        models = await ModelService.get_all(session)
+        result = []
+        for model in models:
+            # Преобразуем dict обратно в ModelMetrics для response
+            metrics = ModelMetrics(**model.metrics) if model.metrics else None
+            result.append(ModelResponse(id=model.id, name=model.name, path=model.path, metrics=metrics))
+        return result
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при получении моделей: {str(e)}"
+        )    
 
 
 @router.get("/{model_id}", response_model=ModelResponse)
