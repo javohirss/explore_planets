@@ -72,5 +72,5 @@ async def update_model_metrics(model_id: int, metrics: ModelMetrics, session: As
     
 
 
-@router.get("/example")
-async def get_example_dataset(dataset_type: int)
+# @router.get("/example")
+# async def get_example_dataset(dataset_type: int)
