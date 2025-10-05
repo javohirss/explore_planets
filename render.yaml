@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: explore-planets-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: explore-planets-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  - name: explore-planets-db
+    plan: free
+    databaseName: explore_planets
+    user: explore_planets_user
