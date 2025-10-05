@@ -44,17 +44,14 @@ def clean_columns_for_ml_alternative(df, target_col='tfopwg_disp'):
 
 
 def prepare_data(df, target_col='tfopwg_disp'):
-    """
-    Подготовка данных для инференса (без целевых переменных)
-    """
-    # 1. Очистка данных
+
     df_clean, cols = clean_columns_for_ml_alternative(df, target_col)
     print(df_clean)
     
-    # 2. Извлечение числовых признаков (исключаем целевые колонки)
+
     X = df_clean.select_dtypes(include=['float64', 'int64'])
     
-    # 3. Удаление проблемных колонок
+
     all_nan_cols = X.columns[X.isna().all()].tolist()
     if all_nan_cols:
         X = X.drop(columns=all_nan_cols)
@@ -64,7 +61,7 @@ def prepare_data(df, target_col='tfopwg_disp'):
     if high_missing_cols:
         X = X.drop(columns=high_missing_cols)
     
-    # 4. Заполнение пропущенных значений
+
     imputer = SimpleImputer(strategy='median')
     X_imputed = imputer.fit_transform(X)
     

@@ -25,22 +25,22 @@ def load_model(path: str):
     )
 
 def make_predict_labels(predictions):
-    return ["EXOPLANET" if p>0 else "NO EXPOLANET" for p in predictions ]
+    return ["EXOPLANET" if p>0 else "NOT EXOPLANET" for p in predictions ]
 
 
-def classify_predict_proba(predictions, threshold=0.4):
+def classify_predict_proba(predictions, threshold):
     return [1 if p>threshold else 0 for  p in predictions]
      
 
-def parse_model_predict(model, data):
+def parse_model_predict(model, data, threshold):
     if hasattr(model, "predict_proba"):
         return make_predict_labels(model.predict(data))
     
     else:
-        return make_predict_labels(classify_predict_proba(model.predict(data).flatten()))
+        return make_predict_labels(classify_predict_proba(model.predict(data).flatten(), threshold))
 
 
-def predict(model_path, raw_data: bytes, dataset_type: Literal["tess", "k2"]):
+def predict(model_path, raw_data: bytes, dataset_type: Literal["tess", "k2"], threshold: float = 0.5):
     df = pd.read_csv(io.BytesIO(raw_data), encoding='utf-8-sig')
     model = load_model(model_path)
 
@@ -53,7 +53,7 @@ def predict(model_path, raw_data: bytes, dataset_type: Literal["tess", "k2"]):
     else:
         raise ValueError(f"Неподдерживаемый тип датасета: {dataset_type}")
     
-    prediction = parse_model_predict(model, X)
+    prediction = parse_model_predict(model, X, threshold)
 
     return prediction
 
