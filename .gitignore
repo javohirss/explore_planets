@@ -153,18 +153,6 @@ QUICK_DEPLOY.md
 ehthumbs.db
 Thumbs.db
 
-# ML Models (большие файлы)
-*.joblib
-*.pkl
-*.h5
-*.keras
-*.model
-
-# Data files
-*.csv
-*.json
-*.parquet
-*.feather
 
 # Logs
 *.log
