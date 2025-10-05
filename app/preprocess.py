@@ -1,80 +1,71 @@
-import pandas as pd
-from sklearn.impute import KNNImputer
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.impute import SimpleImputer
 
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler  # удобно для приведения к [0,1]
-
-
-
-def tess_preprocess(df: pd.DataFrame):
-    nans = df.isna().sum()
-    nans = nans[nans>0].reset_index()
-    nans.columns = ["columns", "n_missing"]
-    full_nans = nans[nans.n_missing==len(df)]["columns"].to_list()
-    nans = nans[~nans["columns"].isin(full_nans)]
-
-    # Безопасное удаление колонок с полными NaN
-    if full_nans:
-        df.drop(columns=full_nans, axis=1, inplace=True)
+def clean_columns_for_ml_alternative(df, target_col='tfopwg_disp'):
+    """
+    Remove non-predictive columns for ML without creating new features.
     
-    dup_cols = [col for col in df.columns if col.endswith("1") or col.endswith("2") or col.endswith("lim") or col.endswith("err")]
-    nans = nans[~nans["columns"].isin(dup_cols)]
+    Removes:
+    - Error/uncertainty columns (err1, err2, errlim)
+    - Limit flag columns (lim)
+    - String representation columns (str)
+    - Metadata/identifier columns
+    - URL and reference columns
     
-    # Безопасное удаление дублирующих колонок
-    if dup_cols:
-        df.drop(dup_cols, axis=1, inplace=True)
-
-    # df = df.drop(columns=['rastr', 'decstr', 'toi_created', 'rowupdate', "ra", "dec", "toi", "tid", "ctoi_alias", "toipfx"], axis=1)
-    # Безопасное удаление конкретных колонок
-    columns_to_drop = ["ra", "dec", "toi", "tid", "toipfx"]
-    existing_columns_to_drop = [col for col in columns_to_drop if col in df.columns]
-    if existing_columns_to_drop:
-        df = df.drop(columns=existing_columns_to_drop, axis=1)
-    df = df.drop(columns=df.select_dtypes(include=["object"]).columns)
-
-    if "tfopwg_disp" in df.columns:
-        tess_map = {
-            "CP": 0,
-            "KP": 0,
-            "PC": 0,
-            "APC": 1,
-            "FP": 1,
-            "FA": 1
-        }
-
-        df["target"] = df["tfopwg_disp"].map(tess_map)
-        df.drop(columns=["tfopwg_disp"], axis=1, inplace=True)
-        y = df["target"]
-        X = df.drop(columns=["target"], axis=1)
-
-        return X, y
+    Returns:
+    --------
+    df_clean, cols_to_drop
+    """
+    all_cols = df.columns.tolist()
+    cols_to_drop = []
     
-    # Если нет колонки tfopwg_disp, возвращаем только X
-    return df, None
+    for col in all_cols:
+        if col == target_col:
+            continue
+            
+        # Drop error, limit, and string columns
+        if (col.endswith('err1') or col.endswith('err2') or 
+            col.endswith('errlim') or col.endswith('lim') or 
+            col.endswith('str') or col.endswith('url')):
+            cols_to_drop.append(col)
+        
+        # Drop identifier and metadata columns
+        if any(x in col.lower() for x in ['rowid', 'htm', 'flag', 'comment', 'ref', 'url']):
+            cols_to_drop.append(col)
+    
+    cols_to_drop = list(set(cols_to_drop))
+    df_clean = df.drop(columns=cols_to_drop, errors='ignore')
+    
+    print(f"✓ Dropped {len(cols_to_drop)} non-predictive columns")
+    print(f"✓ Remaining columns: {len(df_clean.columns)}")
+    print(f"  Example dropped: {', '.join(cols_to_drop[:5])}")
+    
+    return df_clean, cols_to_drop
 
 
 
-
-
-
-
-
-
-
-
-def get_reduntant_pairs(df):
-    pairs_to_drop = set()
-    cols = df.columns
-    for i in range(0, df.shape[1]):
-        for j in range(0, i+1):
-            pairs_to_drop.add((cols[i], cols[j]))
-    return pairs_to_drop
-
-
-def get_top_abs_correlations(df, n=5):
-    au_corr = df.corr().abs().unstack()
-    labels_to_drop = get_reduntant_pairs(df)
-    au_corr = au_corr.drop(labels=labels_to_drop).sort_values(ascending=False)
-    return au_corr[0:n]
+def prepare_data(df, target_col='tfopwg_disp'):
+    """
+    Подготовка данных для инференса (без целевых переменных)
+    """
+    # 1. Очистка данных
+    df_clean, cols = clean_columns_for_ml_alternative(df, target_col)
+    print(df_clean)
+    
+    # 2. Извлечение числовых признаков (исключаем целевые колонки)
+    X = df_clean.select_dtypes(include=['float64', 'int64'])
+    
+    # 3. Удаление проблемных колонок
+    all_nan_cols = X.columns[X.isna().all()].tolist()
+    if all_nan_cols:
+        X = X.drop(columns=all_nan_cols)
+    
+    missing_pct = X.isna().sum() / len(X) * 100
+    high_missing_cols = missing_pct[missing_pct > 80].index.tolist()
+    if high_missing_cols:
+        X = X.drop(columns=high_missing_cols)
+    
+    # 4. Заполнение пропущенных значений
+    imputer = SimpleImputer(strategy='median')
+    X_imputed = imputer.fit_transform(X)
+    
+    return X_imputed, X.columns.tolist()

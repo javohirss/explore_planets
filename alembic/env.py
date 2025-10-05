@@ -12,7 +12,7 @@ sys.path.insert(0, dirname(dirname(dirname(abspath(__file__)))))
 
 from config import settings
 from app.db.base import Base
-from app.pro.models import Planet, Model, PredictionResult
+from app.pro.models import Planet, Model
 
    
 config = context.config

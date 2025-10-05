@@ -6,8 +6,7 @@ import pandas as pd
 import joblib
 from fastapi import HTTPException, status
 
-from app.pro.models import PredictionLabel
-from app.preprocess import tess_preprocess
+from app.preprocess import prepare_data
 
 
 
@@ -24,8 +23,21 @@ def load_model(path: str):
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Неподдерживаемый формат: {ext}"
     )
-            
 
+def make_predict_labels(predictions):
+    return ["EXOPLANET" if p>0 else "NO EXPOLANET" for p in predictions ]
+
+
+def classify_predict_proba(predictions, threshold=0.4):
+    return [1 if p>threshold else 0 for  p in predictions]
+     
+
+def parse_model_predict(model, data):
+    if hasattr(model, "predict_proba"):
+        return make_predict_labels(model.predict(data))
+    
+    else:
+        return make_predict_labels(classify_predict_proba(model.predict(data).flatten()))
 
 
 def predict(model_path, raw_data: bytes, dataset_type: Literal["tess", "k2"]):
@@ -33,16 +45,15 @@ def predict(model_path, raw_data: bytes, dataset_type: Literal["tess", "k2"]):
     model = load_model(model_path)
 
     if dataset_type == "tess":
-        X, y = tess_preprocess(df)
-
-        prediction = model.predict(X)
+        X, cols = prepare_data(df, target_col="tfopwg_disp")
 
     elif dataset_type == "k2":
-        
-        X = df.select_dtypes(include=['number'])
-        prediction = model.predict(X)
+        X, cols = prepare_data(df, target_col="disposition")
+
     else:
         raise ValueError(f"Неподдерживаемый тип датасета: {dataset_type}")
+    
+    prediction = parse_model_predict(model, X)
 
     return prediction
 

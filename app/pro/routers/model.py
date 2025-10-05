@@ -24,9 +24,14 @@ async def get_models(session: AsyncSession = Depends(get_async_session)):
 
 
 @router.get("/{model_id}", response_model=ModelResponse)
-async def get_models(model_id: int,session: AsyncSession = Depends(get_async_session)):
+async def get_models(model_id: int, session: AsyncSession = Depends(get_async_session)):
+    print(f"Model id : {model_id}")
     model = await ModelService.get_by_id(model_id,session)
-    result = []
+    if not model:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Модель не была найдена"
+        )
     
     metrics = ModelMetrics(**model.metrics) if model.metrics else None
     return ModelResponse(id=model.id, name=model.name, path=model.path, metrics=metrics)

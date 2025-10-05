@@ -132,6 +132,7 @@ dmypy.json
 analysis/
 *.ipynb
 *.ipynb_checkpoints/
+preprocess_old.py
 
 # IDE
 .vscode/

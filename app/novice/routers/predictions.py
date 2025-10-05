@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.pro.services import ModelService, PlanetService
 from app.db.session import get_async_session
-from app.dependencies import load_model
+from app.dependencies import load_model, parse_model_predict
 
 
 router = APIRouter(
@@ -36,16 +36,16 @@ async def planet_predict(planet_id: int, session: AsyncSession = Depends(get_asy
     try:
         
         planet_obj = await PlanetService.get_by_id(planet_id, session)
-        features_path ="app/"+ planet_obj.features_path
+        features_path = planet_obj.features_path
         features = pd.read_csv(features_path)
-        print(features.columns)
+        
         if "tess_name" in features.columns:
-            model_obj = await ModelService.get_by_id(1, session)
             row = features[features["tess_name"]==planet_obj.name].drop(columns=["tess_name"], axis=1)
+            model_obj = await ModelService.get_by_name("tess_random_forest", session)
 
         elif "k2_name" in features.columns:
-            model_obj = await ModelService.get_by_id(2, session)
             row = features[features["k2_name"]==planet_obj.name].drop(columns=["k2_name"], axis=1)
+            model_obj = await ModelService.get_by_name("k2_random_forest", session)
 
         else:
             raise HTTPException(
@@ -55,23 +55,11 @@ async def planet_predict(planet_id: int, session: AsyncSession = Depends(get_asy
         
 
         model = load_model(model_obj.path)
-        proba = model.predict(row)
+        prediction = parse_model_predict(model, row)
+        if isinstance(prediction, list):
+            prediction = prediction[0]
         
-        
-        if isinstance(proba, np.ndarray):
-            # numpy array
-            proba_list = proba.tolist()
-        elif hasattr(proba, 'numpy'):
-            # tensorflow tensor
-            proba_list = proba.numpy().tolist()
-        elif hasattr(proba, 'tolist'):
-            # другие объекты с методом tolist
-            proba_list = proba.tolist()
-        else:
-            # обычный Python объект
-            proba_list = list(proba) if hasattr(proba, '__iter__') else [proba]
-        
-        return {"result": proba_list}
+        return {"result": prediction}
 
 
     except Exception as e:

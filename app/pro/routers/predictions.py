@@ -4,10 +4,9 @@ import io
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.pro.services import ModelService, PredictionResultService
+from app.pro.services import ModelService
 from app.dependencies import predict
 from app.db.session import get_async_session
-from app.pro.schemas import PredictionResponse
 
 
 router = APIRouter(
@@ -57,19 +56,5 @@ async def pro_model_predict(model_id: int, dataset_type: Literal["tess", "k2"], 
             detail=str(e)
         ) from e
     
-    # try:
-    #     async with session.begin():
-    #         await PredictionResultService.add_result(
-    #             probability=probability,
-    #             label=label,
-    #             model_id=model_obj.id,
-    #             session=session
-    #         )
-
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail="Failed to save prediction result"
-    #     ) from e
 
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.novice.schemas import PlanetInput
@@ -21,3 +21,5 @@ async def get_planets(session: AsyncSession = Depends(get_async_session)):
 async def add_planet(inputs: PlanetInput, session: AsyncSession = Depends(get_async_session)):
     async with session.begin():
         await PlanetService.add_planet(inputs.name, inputs.features_path, session)
+
+    return Response(status_code=status.HTTP_201_CREATED)

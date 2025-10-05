@@ -19,3 +19,9 @@ class BaseService:
         query = select(cls.model)
         result = await session.execute(query)
         return result.scalars().all()
+    
+    @classmethod
+    async def get_by_name(cls, name: str, session: AsyncSession):
+        query = select(cls.model).where(cls.model.name == name)
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
