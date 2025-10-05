@@ -133,6 +133,9 @@ analysis/
 *.ipynb
 *.ipynb_checkpoints/
 preprocess_old.py
+DEPLOY.md 
+QUICK_DEPLOY.md 
+
 
 # IDE
 .vscode/
