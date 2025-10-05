@@ -10,7 +10,7 @@ from app.pro.routers.model import router as model_router
 app = FastAPI(
     title="Explore Planets API",
     description="API для анализа экзопланет с использованием машинного обучения",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 
@@ -18,7 +18,7 @@ app = FastAPI(
 async def health_check():
     return {"status": "healthy", "message": "API работает корректно"}
 
-app.include_router(novice_predictions_router)
-app.include_router(pro_predicions_router)
-app.include_router(model_router)
-app.include_router(novice_planets_router)
+app.include_router(novice_predictions_router, prefix="/api")
+app.include_router(pro_predicions_router, prefix="/api")
+app.include_router(model_router, prefix="/api")
+app.include_router(novice_planets_router, prefix="/api")
