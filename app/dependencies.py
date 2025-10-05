@@ -51,7 +51,7 @@ def predict(model_path, raw_data: bytes, dataset_type: Literal["tess", "k2"], th
         X, cols = prepare_data(df, target_col="disposition")
 
     else:
-        raise ValueError(f"Неподдерживаемый тип датасета: {dataset_type}")
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"Неподдерживаемый тип датасета: {dataset_type}")
     
     prediction = parse_model_predict(model, X, threshold)
 

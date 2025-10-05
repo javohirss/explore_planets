@@ -1,4 +1,5 @@
 from typing import Any, Literal
+from fastapi.responses import FileResponse
 import pandas as pd
 import io
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Response
@@ -57,4 +58,21 @@ async def pro_model_predict(model_id: int, dataset_type: Literal["tess", "k2"], 
         ) from e
     
 
-
+@router.get("/sample")
+async def get_example_dataset(dataset_type: Literal["tess", "k2"]):
+    if dataset_type == "tess":
+        return FileResponse(
+            path="app/assets/samples/tess_sample.csv",
+            media_type="text/csv; charset=utf-8",
+            filename="sample.csv"
+        )
+    
+    if dataset_type == "k2":
+        return FileResponse(
+            path="app/assets/samples/tess_sample.csv",
+            media_type="text/csv; charset=utf-8",
+            filename="sample.csv"
+        )
+    
+    else:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"Неподдерживаемый тип датасета: {dataset_type}")

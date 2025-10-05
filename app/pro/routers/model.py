@@ -1,5 +1,7 @@
+from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.responses import FileResponse
 
 from app.db.session import get_async_session
 from app.pro.schemas import ModelInput, ModelResponse, ModelMetrics
@@ -72,5 +74,5 @@ async def update_model_metrics(model_id: int, metrics: ModelMetrics, session: As
     
 
 
-# @router.get("/example")
-# async def get_example_dataset(dataset_type: int)
+
+    
