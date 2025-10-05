@@ -69,3 +69,8 @@ async def update_model_metrics(model_id: int, metrics: ModelMetrics, session: As
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при обновлении метрик: {str(e)}"
         )
+    
+
+
+@router.get("/example")
+async def get_example_dataset(dataset_type: int)
